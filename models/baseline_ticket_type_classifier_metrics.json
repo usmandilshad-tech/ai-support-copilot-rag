@@ -1,0 +1,19 @@
+{
+    "model_name": "TF-IDF + Logistic Regression",
+    "model_status": "baseline_only",
+    "test_accuracy": 0.2125,
+    "cv_mean_accuracy": 0.1998,
+    "cv_std_accuracy": 0.0085,
+    "random_baseline_estimate": 0.2,
+    "training_records": 6775,
+    "testing_records": 1694,
+    "target_classes": [
+        "Billing inquiry",
+        "Cancellation request",
+        "Product inquiry",
+        "Refund request",
+        "Technical issue"
+    ],
+    "main_finding": "Model performance is close to random baseline due to noisy or inconsistent ticket_type labels.",
+    "recommended_use": "Use only as a baseline experiment, not as a production-quality classifier."
+}

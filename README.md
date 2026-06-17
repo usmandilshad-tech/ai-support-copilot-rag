@@ -44,5 +44,13 @@ Explain time saving, consistency, escalation, support quality.
 ## 13. Future Improvements
 MLOps, feedback loop, human approval, CRM integration, multilingual Arabic support.
 
-## 14. Author
+## 14. Machine Learning Baseline
+
+A supervised ticket classification baseline was trained using TF-IDF and Logistic Regression. The model achieved approximately 21% accuracy, close to the random baseline for five classes.
+
+Manual label review showed inconsistencies in the dataset labels, so the classifier is retained as a baseline experiment rather than a production-quality model.
+
+The main production focus of this project is RAG-based support assistance, SQL analytics, and workflow automation.
+
+## 15. Author
 Muhammad Usman Dilshad

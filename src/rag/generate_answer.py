@@ -11,8 +11,8 @@ class SupportAnswerGenerator:
     Later, this can be upgraded to use OpenAI, Azure OpenAI, or another LLM.
     """
 
-    def __init__(self):
-        self.retriever = SupportKnowledgeRetriever()
+    def __init__(self, retriever: SupportKnowledgeRetriever | None = None):
+        self.retriever = retriever or SupportKnowledgeRetriever()
 
     def generate_answer(self, ticket_text: str, top_k: int = 3) -> Dict[str, Any]:
         """Generate a support reply based on retrieved knowledge base documents."""

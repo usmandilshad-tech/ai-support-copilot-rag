@@ -52,6 +52,16 @@ class SupportAnswerGenerator:
         context_points: List[Dict[str, Any]]
     ) -> str:
         """Build a structured support reply from retrieved context."""
+        
+        
+        product_name = "your product"
+
+        for line in ticket_text.splitlines():
+            if line.lower().startswith("product:"):
+                product_value = line.split(":", 1)[1].strip()
+                if product_value:
+                    product_name = f"your {product_value}"
+                break
 
         combined_context = "\n\n".join(
             point["content"] for point in context_points
@@ -111,7 +121,7 @@ class SupportAnswerGenerator:
             or "intermittent" in ticket_text.lower()
             ):
             reply = (
-                "Thank you for contacting support. I’m sorry to hear that your product is making unusual noises "
+                f"Thank you for contacting support. I’m sorry to hear that {product_name} is making unusual noises "
                 "and is not functioning properly.\n\n"
                 "To help us investigate this further, please confirm the exact product model, when the issue first started, "
                 "whether the noise happens continuously or only at certain times, and whether any error message or warning "

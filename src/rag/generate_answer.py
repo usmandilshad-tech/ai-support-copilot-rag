@@ -103,7 +103,23 @@ class SupportAnswerGenerator:
                 "success, management, billing, or technical support.\n\n"
                 "The escalation note should clearly state the requested action and priority level."
             )
-
+        elif (
+            "hardware" in ticket_text.lower()
+            or "strange noises" in ticket_text.lower()
+            or "not functioning" in ticket_text.lower()
+            or "not working" in ticket_text.lower()
+            or "intermittent" in ticket_text.lower()
+            ):
+            reply = (
+                "Thank you for contacting support. I’m sorry to hear that your product is making unusual noises "
+                "and is not functioning properly.\n\n"
+                "To help us investigate this further, please confirm the exact product model, when the issue first started, "
+                "whether the noise happens continuously or only at certain times, and whether any error message or warning "
+                "indicator appears. Please also let us know if you have already tried restarting or resetting the product.\n\n"
+                "Because this may involve a hardware-related issue, we may need to escalate the case to our technical support "
+                "team after reviewing these details. Screenshots, short videos, or any additional evidence of the issue would "
+                "also help us diagnose the problem more quickly."
+                )
         else:
             reply = (
                 "Thank you for contacting support. I’m sorry for the inconvenience you are experiencing.\n\n"

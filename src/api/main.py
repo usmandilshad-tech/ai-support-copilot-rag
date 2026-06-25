@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -5,16 +6,11 @@ from pydantic import BaseModel, Field
 
 from src.rag.retrieve_docs import SupportKnowledgeRetriever
 from src.rag.generate_answer import SupportAnswerGenerator
+from src.data.ticket_repository import TicketRepository
 
 
-app = FastAPI(
-    title="AI Support Copilot API",
-    description=(
-        "A portfolio API for support ticket assistance using RAG, "
-        "semantic retrieval, and support response generation."
-    ),
-    version="1.0.0"
-)
+
+
 
 
 class TicketRequest(BaseModel):
@@ -53,16 +49,34 @@ class SuggestedReplyResponse(BaseModel):
 
 retriever = None
 answer_generator = None
+ticket_repository = None
 
 
-@app.on_event("startup")
-def startup_event():
-    """Load RAG components once when the API starts."""
-    global retriever, answer_generator
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load API components once when the API starts."""
+    global retriever, answer_generator, ticket_repository
 
     retriever = SupportKnowledgeRetriever()
     answer_generator = SupportAnswerGenerator(retriever=retriever)
+    ticket_repository = TicketRepository()
 
+    yield
+
+    retriever = None
+    answer_generator = None
+    ticket_repository = None
+
+
+app = FastAPI(
+    title="AI Support Copilot API",
+    description=(
+        "A portfolio API for support ticket assistance using RAG, "
+        "semantic retrieval, and support response generation."
+    ),
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 @app.get("/")
 def root():
@@ -75,6 +89,8 @@ def root():
             "/docs"
         ]
     }
+
+
 
 
 @app.get("/health")
@@ -113,6 +129,84 @@ def suggest_reply(request: TicketRequest):
         )
 
         return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/tickets/recent")
+def get_recent_tickets(limit: int = 10):
+    """Return recent support tickets from MySQL."""
+    try:
+        tickets = ticket_repository.get_recent_tickets(limit=limit)
+        return {
+            "count": len(tickets),
+            "tickets": tickets
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tickets/{ticket_id}")
+def get_ticket(ticket_id: str):
+    """Return a support ticket from MySQL by ticket ID."""
+    try:
+        ticket = ticket_repository.get_ticket_by_id(ticket_id)
+
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+
+        return ticket
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/tickets/{ticket_id}/suggest-reply")
+def suggest_reply_for_ticket(ticket_id: str, top_k: int = 3):
+    """Fetch a ticket from MySQL and generate a suggested RAG reply."""
+    try:
+        ticket = ticket_repository.get_ticket_by_id(ticket_id)
+
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+
+        ticket_text = ticket.get("ticket_text")
+
+        if not ticket_text:
+            ticket_text = f"{ticket.get('ticket_subject', '')} {ticket.get('ticket_description', '')}"
+
+        product_name = str(ticket.get("product_purchased") or "the product")
+
+        ticket_text = ticket_text.replace("{product_purchased}", product_name)
+        ticket_text = ticket_text.replace("}", "")
+
+        enhanced_ticket_text = f"""
+Ticket Type: {ticket.get("ticket_type")}
+Priority: {ticket.get("ticket_priority")}
+Status: {ticket.get("ticket_status")}
+Channel: {ticket.get("ticket_channel")}
+Product: {ticket.get("product_purchased")}
+
+Customer Message:
+{ticket_text}
+"""
+
+        result = answer_generator.generate_answer(
+            ticket_text=enhanced_ticket_text,
+            top_k=top_k
+        )
+
+        return {
+            "ticket": ticket,
+            "rag_response": result
+        }
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
